@@ -1,14 +1,14 @@
 const map = L.map('map').setView([0, 0], 2); // Default view
 
 // Use Mapbox Tiles instead of OpenStreetMap
-L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=YOUR_ACCESS_TOKEN', {
+L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYXJ5YW4wODkyMCIsImEiOiJjbTg1anByMjMwcnZyMmxxdHRmN3lnN3puIn0.u8w2raCKTu1b6bLeL79hEA', {
   attribution: '© Mapbox',
   id: 'mapbox/streets-v11',
   tileSize: 512,
   zoomOffset: -1,
 }).addTo(map);
 
-const socket = new WebSocket('ws://127.0.0.1:3000');
+const socket = new WebSocket('https://locationwebapp.onrender.com/');
 
 socket.onopen = () => console.log('WebSocket connected');
 
