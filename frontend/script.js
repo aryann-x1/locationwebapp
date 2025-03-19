@@ -54,15 +54,11 @@ let watchId = null;
 
 shareBtn.addEventListener('click', () => {
   if (!isSharing) {
-    if (!username) {
-      username = prompt("Enter your name:") || "Anonymous"; // Ask for name only once
-    }
-
     watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         console.log('Fetched location:', latitude, longitude);
-        socket.send(JSON.stringify({ id: userId, name: username, latitude, longitude }));
+        socket.send(JSON.stringify({ id: userId, latitude, longitude, active: true })); // Include 'active: true'
       },
       (error) => console.error('Error fetching location:', error),
       { enableHighAccuracy: true }
@@ -70,7 +66,13 @@ shareBtn.addEventListener('click', () => {
     shareBtn.textContent = 'Stop Sharing';
   } else {
     navigator.geolocation.clearWatch(watchId);
+    socket.send(JSON.stringify({ id: userId, active: false })); // Notify server to remove user
+    if (markers.has(userId)) {
+      map.removeLayer(markers.get(userId)); // Remove marker
+      markers.delete(userId);
+    }
     shareBtn.textContent = 'Start Sharing';
   }
   isSharing = !isSharing;
 });
+

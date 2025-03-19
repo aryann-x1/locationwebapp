@@ -17,23 +17,27 @@ wss.on('connection', (ws) => {
 
   ws.on('message', (message) => {
     try {
-        const data = JSON.parse(message);
-        if (data.id && data.latitude && data.longitude && data.name) {
-            // Store location with name
-            clients.set(data.id, { name: data.name, latitude: data.latitude, longitude: data.longitude });
-
-            // Convert clients Map to array and send to all connected clients
-            const locations = Array.from(clients.values());
-            wss.clients.forEach((client) => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify(locations));
-                }
-            });
+      const data = JSON.parse(message);
+      if (data.id) {
+        if (data.active === false) {
+          clients.delete(data.id); // Remove user from server's list
+        } else if (data.latitude && data.longitude) {
+          clients.set(data.id, { latitude: data.latitude, longitude: data.longitude, name: data.name });
         }
+  
+        // Broadcast updated list of locations
+        const locations = Array.from(clients.values());
+        wss.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(locations));
+          }
+        });
+      }
     } catch (err) {
-        console.error('Error parsing message:', err);
+      console.error('Error parsing message:', err);
     }
-});
+  });
+  
 
 
   ws.on('close', () => {
