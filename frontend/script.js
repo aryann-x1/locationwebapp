@@ -17,14 +17,36 @@ const userId = Math.random().toString(36).substring(2, 10); // Unique ID for eac
 let username = null; // Store the user's name
 
 // WebSocket message handling
+// Function to generate a random color for each user
+function getUserColor(userId) {
+  const colors = ['red', 'blue', 'green', 'orange', 'purple', 'yellow', 'pink'];
+  const index = Math.abs(userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % colors.length;
+  return colors[index];
+}
+
+// Function to create a custom marker icon
+function createCustomIcon(color) {
+  return L.icon({
+    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`,
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+  });
+}
+
 socket.onmessage = async (event) => {
   try {
     const locations = JSON.parse(event.data);
     console.log('Received locations:', locations);
 
     locations.forEach(({ id, name, latitude, longitude }) => {
+      const userColor = getUserColor(id); // Assign a unique color based on userId
+      const customIcon = createCustomIcon(userColor); // Create a colored marker
+
       if (!markers.has(id)) {
-        const marker = L.marker([latitude, longitude]).addTo(map);
+        const marker = L.marker([latitude, longitude], { icon: customIcon }).addTo(map);
         marker.bindPopup(`<b>${name}</b>`).openPopup(); // Show name on the marker
         markers.set(id, marker);
       } else {
