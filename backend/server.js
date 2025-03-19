@@ -19,10 +19,17 @@ wss.on('connection', (ws) => {
     try {
       const data = JSON.parse(message);
       if (data.id && data.latitude && data.longitude) {
-        clients.set(data.id, { latitude: data.latitude, longitude: data.longitude });
+        // Store the user's name along with location
+        clients.set(data.id, { latitude: data.latitude, longitude: data.longitude, name: data.name || "Anonymous" });
 
         // Broadcast all locations to all clients
-        const locations = Array.from(clients.values());
+        const locations = Array.from(clients.entries()).map(([id, info]) => ({
+          id,
+          latitude: info.latitude,
+          longitude: info.longitude,
+          name: info.name,
+        }));
+
         wss.clients.forEach((client) => {
           if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(locations));
@@ -36,12 +43,23 @@ wss.on('connection', (ws) => {
 
   ws.on('close', () => {
     console.log('Client disconnected');
-    clients.forEach((value, key) => {
-      if (ws === key) clients.delete(key);
-    });
+
+    // Find and remove the disconnected client
+    for (let [key, value] of clients.entries()) {
+      if (ws === key) {
+        clients.delete(key);
+        break;
+      }
+    }
 
     // Notify all clients of updated list
-    const locations = Array.from(clients.values());
+    const locations = Array.from(clients.entries()).map(([id, info]) => ({
+      id,
+      latitude: info.latitude,
+      longitude: info.longitude,
+      name: info.name,
+    }));
+
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify(locations));

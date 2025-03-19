@@ -14,20 +14,22 @@ socket.onopen = () => console.log('WebSocket connected');
 
 let markers = new Map(); // Store markers for each user
 const userId = Math.random().toString(36).substring(2, 10); // Unique ID for each user
+let username = null; // Store the user's name
 
 socket.onmessage = async (event) => {
   try {
     const locations = JSON.parse(event.data); // Receive all users' locations
     console.log('Received locations:', locations);
 
-    locations.forEach(({ latitude, longitude }) => {
-      if (!markers.has(latitude + longitude)) {
-        // Create a new marker if not exists
+    locations.forEach(({ id, latitude, longitude, name }) => {
+      if (!markers.has(id)) {
+        // Create a new marker if it doesn't exist
         const marker = L.marker([latitude, longitude]).addTo(map);
-        markers.set(latitude + longitude, marker);
+        marker.bindPopup(`<b>${name || "Unknown"}</b>`).openPopup();
+        markers.set(id, marker);
       } else {
         // Update marker position
-        markers.get(latitude + longitude).setLatLng([latitude, longitude]);
+        markers.get(id).setLatLng([latitude, longitude]);
       }
     });
 
@@ -49,11 +51,15 @@ let watchId = null;
 
 shareBtn.addEventListener('click', () => {
   if (!isSharing) {
+    if (!username) {
+      username = prompt("Enter your name:") || "Anonymous"; // Ask for name only once
+    }
+
     watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         console.log('Fetched location:', latitude, longitude);
-        socket.send(JSON.stringify({ id: userId, latitude, longitude }));
+        socket.send(JSON.stringify({ id: userId, name: username, latitude, longitude }));
       },
       (error) => console.error('Error fetching location:', error),
       { enableHighAccuracy: true }
