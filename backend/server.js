@@ -17,29 +17,24 @@ wss.on('connection', (ws) => {
 
   ws.on('message', (message) => {
     try {
-      const data = JSON.parse(message);
-      if (data.id && data.latitude && data.longitude) {
-        // Store the user's name along with location
-        clients.set(data.id, { latitude: data.latitude, longitude: data.longitude, name: data.name || "Anonymous" });
+        const data = JSON.parse(message);
+        if (data.id && data.latitude && data.longitude && data.name) {
+            // Store location with name
+            clients.set(data.id, { name: data.name, latitude: data.latitude, longitude: data.longitude });
 
-        // Broadcast all locations to all clients
-        const locations = Array.from(clients.entries()).map(([id, info]) => ({
-          id,
-          latitude: info.latitude,
-          longitude: info.longitude,
-          name: info.name,
-        }));
-
-        wss.clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(locations));
-          }
-        });
-      }
+            // Convert clients Map to array and send to all connected clients
+            const locations = Array.from(clients.values());
+            wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify(locations));
+                }
+            });
+        }
     } catch (err) {
-      console.error('Error parsing message:', err);
+        console.error('Error parsing message:', err);
     }
-  });
+});
+
 
   ws.on('close', () => {
     console.log('Client disconnected');

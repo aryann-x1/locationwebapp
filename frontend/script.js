@@ -18,29 +18,32 @@ let username = null; // Store the user's name
 
 socket.onmessage = async (event) => {
   try {
-    const locations = JSON.parse(event.data); // Receive all users' locations
-    console.log('Received locations:', locations);
+      const locations = JSON.parse(event.data); // Receive all users' locations
+      console.log('Received locations:', locations);
 
-    locations.forEach(({ id, latitude, longitude, name }) => {
-      if (!markers.has(id)) {
-        // Create a new marker if it doesn't exist
-        const marker = L.marker([latitude, longitude]).addTo(map);
-        marker.bindPopup(`<b>${name || "Unknown"}</b>`).openPopup();
-        markers.set(id, marker);
-      } else {
-        // Update marker position
-        markers.get(id).setLatLng([latitude, longitude]);
+      locations.forEach(({ name, latitude, longitude }) => {
+          const key = latitude + longitude;
+          
+          if (!markers.has(key)) {
+              // Create a new marker if it doesn't exist
+              const marker = L.marker([latitude, longitude]).addTo(map)
+                  .bindPopup(`<b>${name}</b>`).openPopup();
+              markers.set(key, marker);
+          } else {
+              // Update marker position
+              markers.get(key).setLatLng([latitude, longitude]).bindPopup(`<b>${name}</b>`);
+          }
+      });
+
+      if (locations.length > 0) {
+          // Center map to the last received location
+          map.setView([locations[locations.length - 1].latitude, locations[locations.length - 1].longitude], 13);
       }
-    });
-
-    if (locations.length > 0) {
-      // Center map to last received location
-      map.setView([locations[locations.length - 1].latitude, locations[locations.length - 1].longitude], 13);
-    }
   } catch (error) {
-    console.error('Error processing WebSocket message:', error);
+      console.error('Error processing WebSocket message:', error);
   }
 };
+
 
 socket.onerror = (error) => console.error('WebSocket error:', error);
 socket.onclose = () => console.log('WebSocket connection closed');
