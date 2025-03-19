@@ -16,31 +16,27 @@ let markers = new Map(); // Store markers for each user
 const userId = Math.random().toString(36).substring(2, 10); // Unique ID for each user
 let username = null; // Store the user's name
 
+// WebSocket message handling
 socket.onmessage = async (event) => {
   try {
-      const locations = JSON.parse(event.data); // Receive all users' locations
-      console.log('Received locations:', locations);
+    const locations = JSON.parse(event.data);
+    console.log('Received locations:', locations);
 
-      locations.forEach(({ name, latitude, longitude }) => {
-          const key = latitude + longitude;
-          
-          if (!markers.has(key)) {
-              // Create a new marker if it doesn't exist
-              const marker = L.marker([latitude, longitude]).addTo(map)
-                  .bindPopup(`<b>${name}</b>`).openPopup();
-              markers.set(key, marker);
-          } else {
-              // Update marker position
-              markers.get(key).setLatLng([latitude, longitude]).bindPopup(`<b>${name}</b>`);
-          }
-      });
-
-      if (locations.length > 0) {
-          // Center map to the last received location
-          map.setView([locations[locations.length - 1].latitude, locations[locations.length - 1].longitude], 13);
+    locations.forEach(({ id, name, latitude, longitude }) => {
+      if (!markers.has(id)) {
+        const marker = L.marker([latitude, longitude]).addTo(map);
+        marker.bindPopup(`<b>${name}</b>`).openPopup(); // Show name on the marker
+        markers.set(id, marker);
+      } else {
+        markers.get(id).setLatLng([latitude, longitude]);
       }
+    });
+
+    if (locations.length > 0) {
+      map.setView([locations[locations.length - 1].latitude, locations[locations.length - 1].longitude], 13);
+    }
   } catch (error) {
-      console.error('Error processing WebSocket message:', error);
+    console.error('Error processing WebSocket message:', error);
   }
 };
 
@@ -54,11 +50,12 @@ let watchId = null;
 
 shareBtn.addEventListener('click', () => {
   if (!isSharing) {
+    const userName = prompt("Enter your name:") || "Anonymous"; // Prompt for user name
     watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         console.log('Fetched location:', latitude, longitude);
-        socket.send(JSON.stringify({ id: userId, latitude, longitude, active: true })); // Include 'active: true'
+        socket.send(JSON.stringify({ id: userId, name: userName, latitude, longitude, active: true }));
       },
       (error) => console.error('Error fetching location:', error),
       { enableHighAccuracy: true }
@@ -67,6 +64,7 @@ shareBtn.addEventListener('click', () => {
   } else {
     navigator.geolocation.clearWatch(watchId);
     socket.send(JSON.stringify({ id: userId, active: false })); // Notify server to remove user
+
     if (markers.has(userId)) {
       map.removeLayer(markers.get(userId)); // Remove marker
       markers.delete(userId);
@@ -75,4 +73,6 @@ shareBtn.addEventListener('click', () => {
   }
   isSharing = !isSharing;
 });
+
+
 

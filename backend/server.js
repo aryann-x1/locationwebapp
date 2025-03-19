@@ -21,8 +21,8 @@ wss.on('connection', (ws) => {
       if (data.id) {
         if (data.active === false) {
           clients.delete(data.id); // Remove user from server's list
-        } else if (data.latitude && data.longitude) {
-          clients.set(data.id, { latitude: data.latitude, longitude: data.longitude, name: data.name });
+        } else if (data.latitude && data.longitude && data.name) {
+          clients.set(data.id, { id: data.id, name: data.name, latitude: data.latitude, longitude: data.longitude });
         }
   
         // Broadcast updated list of locations
@@ -37,6 +37,7 @@ wss.on('connection', (ws) => {
       console.error('Error parsing message:', err);
     }
   });
+  
   
 
 
